@@ -3,8 +3,7 @@
 CONFIG - This script sets up all the parameters for the simulation
 All the parameters are stored in the "settings" structure.
 
-REVISIONS:
-- #0 16/04/2016, Release, Francesco Colombi
+
 
 Copyright © 2021, Skyward Experimental Rocketry, AFD department
 All rights reserved
@@ -22,8 +21,8 @@ settings.mission = 'Lynx_Roccaraso_September_2021';
 %% LAUNCH SETUP
 % launchpad directions
 % for a single run the maximum and the minimum value of the following angles must be the same.
-settings.OMEGAmax = 85*pi/180;                              % [rad] Maximum Elevation Angle, user input in degrees (ex. 80)
-settings.PHImax = 0*pi/180;                               % [rad] Maximum Azimuth Angle from North Direction, user input in degrees (ex. 90)
+settings.OMEGA = 85*pi/180;                              % [rad] Maximum Elevation Angle, user input in degrees (ex. 80)
+settings.PHI = 0*pi/180;                               % [rad] Maximum Azimuth Angle from North Direction, user input in degrees (ex. 90)
 
 
 
@@ -44,13 +43,21 @@ settings.multipleAB = true;                               % If true, multiple an
 %                             configuration. Its length must be -1 the
 %                             length of settings.control
 
-settings.control = [1];                         % aerobrakes, 1-2-3 for 0%, 50% or 100% opened
-settings.dtControl = [3 3];                       % aerobrakes, configurations usage time
+settings.control = [3 2 1];                         % aerobrakes, 1-2-3 for 0%, 50% or 100% opened
+settings.dtControl = [2.8 2.9];                       % aerobrakes, configurations usage time
+
+
+
+
+
 
 
 %% WIND DETAILS
 % select which model you want to use:
 
+nFL = 4; %number of flight levels
+azimuthGround = 270; 
+magGround = 4; 
 %%%%% Matlab Wind Model
 settings.wind.model = false;
 % matlab hswm model, wind model on altitude based on historical data
@@ -60,10 +67,11 @@ settings.wind.model = false;
 settings.wind.input = true;
 % Wind is generated for every altitude interpolating with the coefficient defined below
 
-settings.wind.inputGround = 5;                   % wind magnitude at the ground [m/s]
-settings.wind.inputAlt = [0 500 1000 1500 2000];      % altitude vector [m]
-settings.wind.inputMult = [0 6 10 160 180];          % percentage of increasing magnitude at each altitude
-settings.wind.inputAzimut = wrapTo360([120 100 90 90 90]+180);   % wind azimut angle at each altitude (toward wind incoming direction) [deg]
+settings.wind.inputGround = 4;                   % wind magnitude at the ground [m/s]
+settings.wind.inputAlt = linspace(0, 2000, nFL+1);      % altitude vector [m]
+settings.wind.inputMult = zeros(1, nFL+1);          % percentage of increasing magnitude at each altitude
+
+settings.wind.inputAzimut = wrapTo360([azimuthGround, azimuthGround*ones(1, nFL)]+180);   % wind azimut angle at each altitude (toward wind incoming direction) [deg]
 
 settings.wind.inputUncertainty = [0, 0];
 % settings.wind.inputUncertainty = [a,b];      wind uncertanties:
@@ -81,16 +89,25 @@ settings.wind.inputUncertainty = [0, 0];
 
 expectedApogee = 1500; %expected apogee based on telemetry
 
+expectedMaxAcc = 80; %m/s^2
+
 %% BOUNDARIES
-lb = [-500,-500,-500,-500]'; 
-ub = [500, 500, 500, 500]'; 
+maxWind = 80; 
+minWind = 0; 
+maxAz = 360; 
+minAz = 0; 
+
+
+
+ub = [ ((maxWind/magGround - 1)*100) * ones(1, nFL) , maxAz * ones(1, nFL) ]; 
+lb = [ ((minWind/magGround - 1)*100) * ones(1, nFL) , minAz * ones(1, nFL) ]; 
 
 %% LINEAR COSTRAINTS
 
 % voglio che ogni livello abbia un vento superiore al livello superiore ma
 % che l'incremento sia contenuto, analogamente voglio che la rotazione tra
 % livelli consecutivi sia contenuta
-nFL = 4; 
+ 
 nVar = 2*nFL; 
 
 maxDeltaMag = 20; %variazione % [m/s]
@@ -121,6 +138,9 @@ for i = 2:nFL
     A(row2:row2+1, col2:col2+1) = [-1 1; 1 -1];
     b(row2:row2+1, 1) = [maxDeltaAz, -minDeltaAz]'; 
 end
+
+%%
+settings.parpool = true; 
 
 
 

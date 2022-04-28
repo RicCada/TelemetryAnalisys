@@ -2,37 +2,62 @@ clc;
 clear all; 
 close all; 
 
-%%
-path = '../../msa-toolkit'; 
-addpath(path);   
+
+config; 
+%% LOAD DATA
+dataPath = strcat('../../msa-toolkit/data/', settings.mission);
+addpath(dataPath);
+str = '../../msa-toolkit/commonFunctions/'; 
+addpath(genpath(str));   
+simulationsData; 
+
+
 
 %%
 
- if settings.wind.model && settings.wind.input
-    error('Both wind model and input wind are true, select just one of them')
+tol = 1/(0.8*expectedApogee + 0.2*expectedMaxAcc); 
+
+options = optimoptions('ga', 'MaxStallGenerations', 10, 'FunctionTolerance', ...
+    1/expectedApogee, 'MaxGenerations', 5, 'NonlinearConstraintAlgorithm', 'penalty',...
+    'PopulationSize', 100, 'Display' ,  'iter' , 'UseParallel', settings.parpool, 'UseVectorized', false);
+
+% Computational time needed
+
+
+pool = gcp('nocreate'); % If no pool, do not create new one.
+
+
+if isempty(pool)
+    poolsize = 1;       % If no pool then # of workers is just 1
+else
+    poolsize = pool.NumWorkers;
 end
 
-if settings.multipleAB && length(settings.control) > 1 && length(settings.dtControl) < length(settings.control) - 1
-    error('In airbrakes smooth opening simulations, AB configuration usage time vector must be at least of length length(pCOntrol)-1, check config.m')
-end
-    
-if settings.wind.HourMin ~= settings.wind.HourMax || settings.wind.DayMin ~= settings.wind.DayMax
-    error('In standard simulations with the wind model the day and the hour of launch must be unique, check config.m')
-end
 
-if settings.OMEGAmin ~= settings.OMEGAmax || settings.PHImin ~= settings.PHImax
-    error('In a single simulation the launchpad configuration has to be unique, check config.m')
-end
+% Perform optimization
+tic
+fitnessfcn = @(x) deltaApogee(x, expectedApogee,expectedMaxAcc, settings);
 
-if settings.para(settings.Npara).z_cut ~= 0 
-    error('The landing will be not achived, check the final altitude of the last parachute in config.m')
-end
+[x, fval, exitflag] = ga(fitnessfcn, nVar, A , b, [], [],...
+    lb, ub, [], [], options);
 
-if settings.upwind
-    error('Upwind is available just in stochastich simulations, check config.m');
-end
+computationalTime = toc;
 
-if settings.wind.input && not(all(settings.wind.inputUncertainty == 0))
-    error('settings.wind.inputUncertainty is available just in stochastich simulations, set it null')
-end
+
+
+delete(gcp('nocreate')) %shutting down parallel pool
+
+%% print results
+fprintf('COMPUTATIONAL EFFORT: \n\n')
+fprintf('- Total time, %g [s]\n\n\n', computationalTime)
+
+fprintf('WIND MAGNITUDE: \n')
+fprintf('%f, %f, %f, %f \n\n', x(1), x(2), x(3), x(4)); 
+
+fprintf('WIND DIRECTION: \n')
+fprintf('%f, %f, %f, %f \n\n', x(5), x(6), x(7), x(8)); 
+
+
+
+
 

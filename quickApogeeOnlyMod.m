@@ -30,7 +30,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 %}
 
-datcomPath = '../commonFunctions/Datcom/';
 
 %% ERROR CHECKING
 if not(settings.multipleAB) && length(settings.control) > 1

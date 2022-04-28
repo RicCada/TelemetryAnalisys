@@ -9,5 +9,6 @@ function d = deltaApogee(x, expectedApogee, expectedMaxAcc, settings)
     [apogee, maxAcc] = quickApogeeOnlyMod(settings); 
     
 
-    d = 0.8*abs(expectedApogee - apogee) + 0.2*abs(expectedMaxAcc - maxAcc);   %different weight for apogee and acceleration
+    d = 0.8*abs(expectedApogee - apogee)/expectedApogee + 0.2*abs(expectedMaxAcc - maxAcc)/expectedMaxAcc;   %different weight for apogee and acceleration normalized
+    d = -1 * d; %get a minimization problem
 end
