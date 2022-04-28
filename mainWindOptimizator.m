@@ -35,3 +35,4 @@ end
 if settings.wind.input && not(all(settings.wind.inputUncertainty == 0))
     error('settings.wind.inputUncertainty is available just in stochastich simulations, set it null')
 end
+

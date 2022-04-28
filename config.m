@@ -94,7 +94,9 @@ nFL = 4;
 nVar = 2*nFL; 
 
 maxDeltaMag = 20; %variazione % [m/s]
-maxDeltaAz = 30; %deg
+minDeltaMag = 0; 
+
+maxDeltaAz = 30; % variazione azimut deg
 minDeltaAz = -30; %deg 
 
 A = zeros(2*nVar, nVar); 
