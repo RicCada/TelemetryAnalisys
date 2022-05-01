@@ -47,17 +47,31 @@ settings.control = [3 2 1];                         % aerobrakes, 1-2-3 for 0%, 
 settings.dtControl = [2.8 2.9];                       % aerobrakes, configurations usage time
 
 
+%% OPTIMIZATION
 
+expectedApogee = 1500; %expected apogee based on telemetry
+expectedMaxAcc = 80; %m/s^2
+nFL = 4; %number of flight levels
 
+velGround = 4; 
 
+azimuthGround = 270; 
 
+maxVel = 80; 
+minVel = 0; 
+maxDeltaVel = 30; %variazione [m/s]
+minDeltaVel = -10; 
 
+maxAz = 360; 
+minAz = 0; 
+maxDeltaAz = 30; % variazione azimut deg
+minDeltaAz = -30; %deg 
+
+tol = 1e-5; 
 %% WIND DETAILS
 % select which model you want to use:
 
-nFL = 4; %number of flight levels
-azimuthGround = 270; 
-magGround = 4; 
+
 %%%%% Matlab Wind Model
 settings.wind.model = false;
 % matlab hswm model, wind model on altitude based on historical data
@@ -85,22 +99,17 @@ settings.wind.inputUncertainty = [0, 0];
 % 180 deg                       -> South
 % 270 deg                       -> West
 
-%%
-
-expectedApogee = 1500; %expected apogee based on telemetry
-
-expectedMaxAcc = 80; %m/s^2
 
 %% BOUNDARIES
-maxWind = 80; 
-minWind = 0; 
-maxAz = 360; 
-minAz = 0; 
+% optimization vector x contains velocity and direction in each flight
+% level
 
 
 
-ub = [ ((maxWind/magGround - 1)*100) * ones(1, nFL) , maxAz * ones(1, nFL) ]; 
-lb = [ ((minWind/magGround - 1)*100) * ones(1, nFL) , minAz * ones(1, nFL) ]; 
+
+
+ub = [ maxVel * ones(1, nFL) , maxAz * ones(1, nFL) ]; 
+lb = [ minVel * ones(1, nFL) , minAz * ones(1, nFL) ]; 
 
 %% LINEAR COSTRAINTS
 
@@ -110,39 +119,56 @@ lb = [ ((minWind/magGround - 1)*100) * ones(1, nFL) , minAz * ones(1, nFL) ];
  
 nVar = 2*nFL; 
 
-maxDeltaMag = 20; %variazione % [m/s]
-minDeltaMag = 0; 
 
-maxDeltaAz = 30; % variazione azimut deg
-minDeltaAz = -30; %deg 
 
-A = zeros(2*nVar, nVar); 
-b = zeros(2*nVar, 1); 
+A = zeros(5*nFL, nVar); 
+b = zeros(5*nFL, 1); 
 
 A(1, 1) = 1; 
 A(2, 1) = -1; 
-A(nVar+1, nFL+1) = 1;
-A(nVar+2, nFL+1) = -1; 
+A(3, 1) = -1; 
 
-b(1, 1) = maxDeltaMag + settings.wind.inputGround; 
-b(2, 1) = - settings.wind.inputGround; 
-b(nVar + 1, 1) = maxDeltaAz + settings.wind.inputAzimut(1); 
-b(nVar + 2, 1) = -minDeltaAz + settings.wind.inputAzimut(1); 
+A(3*nFL + 1, nFL +1) = 1; 
+A(3*nFL + 2, nFL +1) = -1; 
+
+b(1, 1) = maxDeltaVel + velGround; 
+b(2, 1) = -minDeltaVel - velGround;
+b(3, 1) = 0; 
+
+b(3*nFL + 1, 1) = maxDeltaAz + azimuthGround; 
+b(3*nFL + 2, 1) = -minDeltaAz - azimuthGround; 
+
 
 for i = 2:nFL
-    A(2*i-1:2*i, i-1: i) = [-1 1; 1 -1]; 
-    b(2*i-1:2*i, 1) = [maxDeltaMag, 0]'; 
+    
+    row1 = 3*i - 2; 
+    col1 = i-1; 
+    
+    A(row1:row1+2, col1: col1+1) = [-1 1; 1 -1; 0 -1]; 
+    b(row1:row1+2, 1) = [maxDeltaVel, -minDeltaVel, 0]'; 
 
-    row2 = 2*nFL + 2*i - 1; 
+
+    row2 = 3*nFL + 2*i - 1;  
     col2 = nFL + i - 1; 
+    
     A(row2:row2+1, col2:col2+1) = [-1 1; 1 -1];
     b(row2:row2+1, 1) = [maxDeltaAz, -minDeltaAz]'; 
 end
 
-%%
+settings.A = A; 
+settings.b = b; 
+
+%% parallelization
 settings.parpool = true; 
 
+if settings.parpool
+    parpool; 
+end
 
+%% COMPATIBILITY SETTINGS
+% this settings are needed to work with the commonFunctions folder, do not
+% modify it unless you now what you're doing
+settings.stoch.N = 1;
 
 
 

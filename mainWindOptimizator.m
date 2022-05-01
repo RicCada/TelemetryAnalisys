@@ -1,5 +1,5 @@
 clc; 
-clear all; 
+clear; 
 close all; 
 
 
@@ -15,11 +15,9 @@ simulationsData;
 
 %%
 
-tol = 1/(0.8*expectedApogee + 0.2*expectedMaxAcc); 
-
-options = optimoptions('ga', 'MaxStallGenerations', 10, 'FunctionTolerance', ...
-    1/expectedApogee, 'MaxGenerations', 5, 'NonlinearConstraintAlgorithm', 'penalty',...
-    'PopulationSize', 100, 'Display' ,  'iter' , 'UseParallel', settings.parpool, 'UseVectorized', false);
+options = optimoptions('ga', 'MaxStallGenerations', 20, 'FunctionTolerance', ...
+    tol, 'MaxGenerations', 50, 'PopulationSize', 2000,'NonlinearConstraintAlgorithm', ...
+     'penalty', 'Display' ,  'iter' , 'UseParallel', settings.parpool);
 
 % Computational time needed
 
@@ -36,10 +34,13 @@ end
 
 % Perform optimization
 tic
-fitnessfcn = @(x) deltaApogee(x, expectedApogee,expectedMaxAcc, settings);
 
-[x, fval, exitflag] = ga(fitnessfcn, nVar, A , b, [], [],...
-    lb, ub, [], [], options);
+nonlcon = @(x) checkBound(x, settings); 
+
+fitnessfcn = @(x) deltaApogee(x, expectedApogee, expectedMaxAcc, settings);
+
+[x, fval, exitflag] = ga(fitnessfcn, nVar, [] , [], [], [],...
+    lb, ub, nonlcon, [], options);
 
 computationalTime = toc;
 
@@ -51,6 +52,9 @@ delete(gcp('nocreate')) %shutting down parallel pool
 fprintf('COMPUTATIONAL EFFORT: \n\n')
 fprintf('- Total time, %g [s]\n\n\n', computationalTime)
 
+fprintf('HEIGHT: \n'); 
+fprintf('%f, %f, %f, %f, %f\n\n', settings.wind.inputAlt)
+
 fprintf('WIND MAGNITUDE: \n')
 fprintf('%f, %f, %f, %f \n\n', x(1), x(2), x(3), x(4)); 
 
@@ -59,5 +63,16 @@ fprintf('%f, %f, %f, %f \n\n', x(5), x(6), x(7), x(8));
 
 
 
+%{
 
+HEIGHT: 
+0.000000, 500.000000, 1000.000000, 1500.000000, 2000.000000
+
+WIND MAGNITUDE: 
+26.395296, 16.744240, 20.044560, 45.882702 
+
+WIND DIRECTION: 
+240.063739, 231.564822, 260.998110, 263.854985 
+
+%}
 

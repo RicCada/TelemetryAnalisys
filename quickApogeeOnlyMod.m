@@ -50,10 +50,12 @@ end
 % Attitude
 Q0 = angleToQuat(settings.PHI, settings.OMEGA, 0*pi/180)';
 
-%% WIND GENERATION
+%% WIND GENERATION - removed generation of constant wind
 
-[uw, vw, ww, ~] = windInputGenerator(settings.wind);
-settings.constWind = [uw, vw, ww];
+% [uw, vw, ww] = windInputGenerator(settings.wind);
+% settings.constWind = [uw, vw, ww];
+
+
 tf = settings.ode.finalTime;
 
 %% ASCENT
