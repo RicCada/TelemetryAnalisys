@@ -22,8 +22,8 @@ function [err] = deltaPoint(x, settings)
     [t, Y] = ode113(@ascentMod, tInt, Y0, [], settings);
     
     err = norm(Y(end, 1:3)' - settings.expectedPoint); 
-
-
+    
+    
 
 end
 

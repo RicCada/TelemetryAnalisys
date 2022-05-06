@@ -48,9 +48,6 @@ settings.dtControl = [2.8 2.9];                       % aerobrakes, configuratio
 
 
 %% OPTIMIZATION
-
-expectedApogee = 1500; %expected apogee based on telemetry
-expectedMaxAcc = 80; %m/s^2
 nFL = 4; %number of flight levels
 
 velGround = 4; 
@@ -100,70 +97,21 @@ settings.wind.inputUncertainty = [0, 0];
 % 270 deg                       -> West
 
 
-%% BOUNDARIES
-% optimization vector x contains velocity and direction in each flight
-% level
-
-
-
-
-
-ub = [ maxVel * ones(1, nFL) , maxAz * ones(1, nFL) ]; 
-lb = [ minVel * ones(1, nFL) , minAz * ones(1, nFL) ]; 
-
-%% LINEAR COSTRAINTS
-
-% voglio che ogni livello abbia un vento superiore al livello superiore ma
-% che l'incremento sia contenuto, analogamente voglio che la rotazione tra
-% livelli consecutivi sia contenuta
- 
-nVar = 2*nFL; 
-
-
-
-A = zeros(5*nFL, nVar); 
-b = zeros(5*nFL, 1); 
-
-A(1, 1) = 1; 
-A(2, 1) = -1; 
-A(3, 1) = -1; 
-
-A(3*nFL + 1, nFL +1) = 1; 
-A(3*nFL + 2, nFL +1) = -1; 
-
-b(1, 1) = maxDeltaVel + velGround; 
-b(2, 1) = -minDeltaVel - velGround;
-b(3, 1) = 0; 
-
-b(3*nFL + 1, 1) = maxDeltaAz + azimuthGround; 
-b(3*nFL + 2, 1) = -minDeltaAz - azimuthGround; 
-
-
-for i = 2:nFL
-    
-    row1 = 3*i - 2; 
-    col1 = i-1; 
-    
-    A(row1:row1+2, col1: col1+1) = [-1 1; 1 -1; 0 -1]; 
-    b(row1:row1+2, 1) = [maxDeltaVel, -minDeltaVel, 0]'; 
-
-
-    row2 = 3*nFL + 2*i - 1;  
-    col2 = nFL + i - 1; 
-    
-    A(row2:row2+1, col2:col2+1) = [-1 1; 1 -1];
-    b(row2:row2+1, 1) = [maxDeltaAz, -minDeltaAz]'; 
-end
-
-settings.A = A; 
-settings.b = b; 
 
 %% parallelization
-settings.parpool = true; 
+settings.parpool = false; 
 
 if settings.parpool
     parpool; 
 end
+
+
+%% telemetry
+
+tolZ = 1;  %[m] tolleration on liftoff event
+tCheck = 1; %[s]
+
+NcheckPoint = 50
 
 %% COMPATIBILITY SETTINGS
 % this settings are needed to work with the commonFunctions folder, do not
