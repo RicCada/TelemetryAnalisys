@@ -111,7 +111,7 @@ end
 tolZ = 1;  %[m] tolleration on liftoff event
 tCheck = 1; %[s]
 
-NcheckPoint = 50
+NcheckPoint = 50;
 
 %% COMPATIBILITY SETTINGS
 % this settings are needed to work with the commonFunctions folder, do not
