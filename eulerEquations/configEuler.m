@@ -54,6 +54,7 @@ clear cots
 tCalc = 22.1; 
 tol = 1e-3; 
 tMax = 10 * 60; 
+tolRes = 1; 
 
 telem.angSpeedTime = stack.bmx_corrected.gyro.time;
 telem.angSpeed.x = stack.bmx_corrected.gyro.gyro_x;
@@ -89,6 +90,12 @@ telem.velY = stack.nas.vel.vel_y;
 telem.velZ = -stack.nas.vel.vel_z; 
 
 
+settings.vMaxR = 340;  
+settings.vMinR = 15; 
+
+
+global cont;
+cont = 0; 
 %% parallelization
 settings.parpool = false; 
 

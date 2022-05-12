@@ -8,7 +8,7 @@ function [t_flight, agl_altitude_flight] = tmaltitude()
     sysid = 171;
     compid = 96;
     
-    hr_tm = readtable('../../../logs/2021-10-13-lynx-euroc/deathstack/telemetry/csv/hr_tm.csv');
+    hr_tm = readtable('../../../skyward-logs/2021-10-13-lynx-euroc/deathstack/telemetry/csv/hr_tm.csv');
     
     % check if packet is valid (sysid and compid set to 1)
     t = hr_tm.timestamp(hr_tm.sys_id == sysid & hr_tm.comp_id == compid);

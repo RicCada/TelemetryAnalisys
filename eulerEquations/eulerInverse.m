@@ -1,4 +1,4 @@
-function diff = eulerInverse(x, Y, Coeffs, settings)
+function diff = eulerInverse(x, Y, settings)
     % x: vr velocità relativa al vento
     % Y: state
 
@@ -7,7 +7,7 @@ function diff = eulerInverse(x, Y, Coeffs, settings)
     %horizontal-frame velocities
     u = x(1); 
     v = x(2);
-    w = x(3);
+    w = settings.v0(3); 
 
     %body frame angular rates
     p = Y(1);
@@ -53,6 +53,8 @@ function diff = eulerInverse(x, Y, Coeffs, settings)
     [~, ~, ~, rho] = atmosphereData(absoluteAltitude, g, local);
     
     %retrive data from coeffs
+    
+    Coeffs = calcCoeffs(settings.z, vr, settings.tCalc, settings); 
 
     Cm = Coeffs(1); Cn = Coeffs(2); Cl = Coeffs(3); 
     Clp = Coeffs(4); Cmad = Coeffs(5); Cmq = Coeffs(6); 
@@ -65,14 +67,8 @@ function diff = eulerInverse(x, Y, Coeffs, settings)
     M = 0.5 * rho * V_norm^2 * C * (Cm + (Cmad + Cmq)*(q * C)/(2 * V_norm));  %   y-body
     N = 0.5 * rho * V_norm^2 * C * (Cn + (Cnr*r + Cnp*p)*C/(2*V_norm));       %   z-body
 
-    diff = [Ixx*p_dot + (Izz - Iyy)*q*r - L; ...
+    diff = [Ixx*p_dot + (Izz - Iyy)*q*r - L; ... 
             Iyy*q_dot + (Ixx - Izz)*p*r - M; ...
             Izz*r_dot + (Iyy - Ixx)*p*q - N]; 
-
-    diff = norm(diff);
- 
-
-
-
 
 end
