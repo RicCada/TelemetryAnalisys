@@ -62,7 +62,7 @@ telem.angSpeed.y = stack.bmx_corrected.gyro.gyro_y;
 telem.angSpeed.z = stack.bmx_corrected.gyro.gyro_z;
 
 telem.angTime = stack.nas.eul.time; 
-telem.angPith = unwrap(stack.nas.eul.pitch); 
+telem.angPitch = unwrap(stack.nas.eul.pitch); 
 telem.angRoll = unwrap(stack.nas.eul.roll); 
 telem.angYaw = unwrap(stack.nas.eul.yaw); 
 

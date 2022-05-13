@@ -14,30 +14,7 @@ simulationsData;
 
 
 
-%% check
-
-% for i = (1 : length(telem.zTime)-1)
-%     
-%     if telem.zTime(i) >= 24
-%         break; 
-%     end
-%     pi = round(telem.z(i),3);
-%     pf = round(telem.z(i+1),3);
-%     
-%     
-%     vi = round(interp1(telem.velTime, telem.velZ, telem.zTime(i), 'linear'),3);
-%     vf = round(interp1(telem.velTime, telem.velZ, telem.zTime(i), 'linear'),3);
-% 
-%     dt = telem.zTime(i+1) - telem.zTime(i); 
-%     
-%     vM = (pf - pi)/dt; 
-% 
-%     c1 = xor(vM > vi, vM < vf );
-% 
-%     [vi, vf, vM, c1];
-%     
-% 
-% end
+%% CLEAN DATA
 
 
 
@@ -45,51 +22,57 @@ telem.angSpeed.x = movmean(telem.angSpeed.x, 30);
 telem.angSpeed.y = movmean(telem.angSpeed.y, 30); 
 telem.angSpeed.z = movmean(telem.angSpeed.z, 30); 
 
-pdotVect = gradient(telem.angSpeed.x); 
-qdotVect = gradient(telem.angSpeed.y);
-rdotVect = gradient(telem.angSpeed.z);
-%% perform calculations
-tCalc = 20 ; 
+q = gradient(movmean(telem.angPitch,30)); 
 
-z = interpLinear(telem.zTime, telem.z, tCalc); 
+telem.angAcc.x = gradient(telem.angSpeed.x); 
+telem.angAcc.y = gradient(telem.angSpeed.y);
+telem.angAcc.z = gradient(telem.angSpeed.z);
 
-p = interpLinear(telem.angSpeedTime, telem.angSpeed.x, tCalc);
-q = interpLinear(telem.angSpeedTime, telem.angSpeed.y, tCalc);
-r = interpLinear(telem.angSpeedTime, telem.angSpeed.z, tCalc);
+figure(1); 
+plot(telem.angSpeedTime, telem.angSpeed.y, telem.angTime, q)
+legend('p telem', 'p calc'); 
 
-p_dot = interpLinear(telem.angSpeedTime, pdotVect, tCalc);
-q_dot = interpLinear(telem.angSpeedTime, qdotVect, tCalc);
-r_dot = interpLinear(telem.angSpeedTime, rdotVect, tCalc);
-
-pitch = interpLinear(telem.angTime, telem.angPith, tCalc); 
-roll = interpLinear(telem.angTime, telem.angRoll, tCalc); 
-yaw = interpLinear(telem.angTime, telem.angYaw, tCalc); 
-
-vx = interpLinear(telem.velTime, telem.velX, tCalc);
-vy = interpLinear(telem.velTime, telem.velY, tCalc);
-vz = interpLinear(telem.velTime, telem.velZ, tCalc);
-
-vH_telem = [vx, vy, vz]'; 
-
-Q = angle2quat(pitch, roll, yaw, 'YXZ'); 
-
+%% retrive data
+tCalc =2 ; 
 
 Ixx = settings.Ixxe; 
 Iyy = settings.Iyye; 
 Izz = settings.Izze;
 
+data = getTelemetryData(tCalc, telem); 
 
 
-x0 = [vx, vy]';  %optimization variable
+z = data(1);  
+p = data(2); q = data(3); r = data(4); 
+p_dot = data(5); q_dot = data(6); r_dot = data(7); 
+pitch = data(8); roll = data(9); yaw = data(10); 
+vx = data(11); vy = data(12); vz = data(13); 
+
+vH_telem = [vx, vy, vz]'; 
+
+Q = angle2quat(pitch, roll, yaw, 'YXZ'); 
+Y = [p, q, r, p_dot, q_dot, r_dot, Q(1), Q(2), Q(3), Q(4), Ixx, Iyy, Izz, z]; %STATE VECTOR
+
+
+wind = [2;5 ; 0]; 
+vr = vH_telem - wind; 
+
+
+
+%% perform calc
 settings.v0 = vH_telem; %velocity
 settings.z = z; 
 settings.tCalc = tCalc; 
 
-Y = [p, q, r, p_dot, q_dot, r_dot, Q(1), Q(2), Q(3), Q(4), Ixx, Iyy, Izz, z]; %STATE VECTOR
+eulerInverse([vr(1); vr(2)], Y, settings)
 
-res = 100; 
+res = tolRes - 1; 
 time = 0; 
 options = optimoptions('fsolve', 'Display', 'off', 'Algorithm', 'Levenberg-Marquardt'); 
+
+
+x0 = [vx, vy]';  %optimization variable
+
 tic
 while ((res > tolRes) && (time < tMax))
     fun = @(x) eulerInverse(x, Y, settings); 
@@ -101,13 +84,13 @@ while ((res > tolRes) && (time < tMax))
     x0 = settings.vMinR + (settings.vMaxR - settings.vMinR) * rand(2, 1);   
     
     
-    [xCalc,  x0]
-    diff
+    [[xCalc; vH_telem(3)],  [x0; vH_telem(3)], diff]
+    
 
     time = toc; 
 end
 
-
+toc
 
 
 

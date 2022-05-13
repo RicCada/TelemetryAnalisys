@@ -63,12 +63,15 @@ function diff = eulerInverse(x, Y, settings)
 
     % calc Aerodynamics torques
     
-    L = 0.5 * rho * V_norm^2 * C * (Cl + (Clp * p * C)/(2*V_norm));           %   x-body
-    M = 0.5 * rho * V_norm^2 * C * (Cm + (Cmad + Cmq)*(q * C)/(2 * V_norm));  %   y-body
-    N = 0.5 * rho * V_norm^2 * C * (Cn + (Cnr*r + Cnp*p)*C/(2*V_norm));       %   z-body
+    L = 0.5 * rho * V_norm^2 * C * (Cl + (Clp * p * C)/(2*V_norm))           %   x-body
+    M = 0.5 * rho * V_norm^2 * C * (Cm + (Cmad + Cmq)*(q * C)/(2 * V_norm))  %   y-body
+    N = 0.5 * rho * V_norm^2 * C * (Cn + (Cnr*r + Cnp*p)*C/(2*V_norm))       %   z-body
+    Mx = Ixx*p_dot + (Izz - Iyy)*q*r
+    My = Iyy*q_dot + (Ixx - Izz)*p*r
+    Mz = Izz*r_dot + (Iyy - Ixx)*p*q
 
     diff = [Ixx*p_dot + (Izz - Iyy)*q*r - L; ... 
             Iyy*q_dot + (Ixx - Izz)*p*r - M; ...
-            Izz*r_dot + (Iyy - Ixx)*p*q - N]; 
+            Izz*r_dot + (Iyy - Ixx)*p*q - N];
 
 end
