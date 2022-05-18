@@ -7,7 +7,7 @@ function diff = eulerInverse(x, Y, settings)
     %horizontal-frame velocities
     u = x(1); 
     v = x(2);
-    w = settings.v0(3); 
+    w = -1*settings.v0(3); 
 
     %body frame angular rates
     p = Y(1);
